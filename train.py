@@ -1,35 +1,40 @@
 # -*- coding: utf-8 -*-
 
-"""
-训练cnews模型
-"""
-
 from model import *
 from data_helper import *
 import matplotlib.pyplot as plt
 
+model_dict = {'cnn': TextCnn,
+              'mulit_kernel_cnn': TextMultiKernalCnn,
+              'bilstm': TextBiLSTM,
+              'bigru': TextBiGRU,
+              'cnn_lstm': TextCnnLSTM,
+              'cnn_gru': TextCnnGRU,
+              'bilstm_attention': TextBilstmAttention,
+              'cnn_attention': TextCnnAttention}
 
-max_seq_len=200
+max_seq_len=100
 vocab_size=6000
-embed_size=300
+embed_size=100
+class_num=10
 checkpoint_save_path = "./checkpoint/model.ckpt"
-batch_size=128
-epochs=10
+batch_size=50
+epochs=3
 
-
-train_data = "./data/cnews/cnews.train.txt"
-test_data = "./data/cnews/cnews.test.txt"
-dev_data = "./data/cnews/cnews.val.txt"
-vocab_data = "./data/cnews/cnews.vocab.txt"
+x_train_out = "./data/x_train.npy"
+y_train_out = "./data/y_train.npy"
+x_test_out = "./data/x_test.npy"
+y_test_out = "./data/y_test.npy"
+x_dev_out = "./data/x_dev.npy"
+y_dev_out = "./data/y_dev.npy"
 word2id_path = "./data/word2id.json"
-label2id_path = "./data/cnews/label2id.json"
+label2id_path = "./data/label2id.json"
 
 # 加载cnews数据
-x_train, y_train, x_test, y_test, x_dev, y_dev = transfor_cnews(train_data, dev_data, test_data,
-                                                                vocab_data, word2id_path, label2id_path, max_seq_len)
+x_train, y_train, x_test, y_test, x_dev, y_dev = np.load(x_train_out), np.load(y_train_out), np.load(x_test_out),\
+    np.load(y_test_out), np.load(x_dev_out), np.load(y_dev_out)
 
-
-model = TextCnn(vocab_size=vocab_size, embed_size=embed_size)
+model = model_dict['cnn_attention'](vocab_size=vocab_size, embed_size=embed_size, class_num=class_num)
 
 model.compile(optimizer=tf.keras.optimizers.Adam(lr=0.001),
               loss='sparse_categorical_crossentropy',
@@ -45,7 +50,7 @@ history = model.fit(x_train, y_train,
                     validation_data=(x_dev, y_dev),
                     batch_size=batch_size, epochs=epochs,  callbacks=[cp_callback])
 
-model.evaluate(x_test, y_test)
+model.evaluate(x_test, y_test, batch_size=batch_size)
 
 model.summary()
 
@@ -68,5 +73,5 @@ plt.plot(loss, label='Training Loss')
 plt.plot(val_loss, label='Validation Loss')
 plt.title('Training and Validation Loss')
 plt.legend()
-# plt.show()
+plt.show()
 plt.savefig("./train.png")

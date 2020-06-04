@@ -83,3 +83,33 @@ def transfor_cnews(train_path, dev_path, test_path, vocab_path, word2id_path, la
     x_dev, y_dev = padding_data(dev_path, word2id, label2id, max_seq_len)
 
     return x_train, y_train, x_test, y_test, x_dev, y_dev
+
+
+if __name__ == '__main__':
+    train_data = "./data/cnews/cnews.train.txt"
+    test_data = "./data/cnews/cnews.test.txt"
+    dev_data = "./data/cnews/cnews.val.txt"
+    vocab_data = "./data/cnews/cnews.vocab.txt"
+    word2id_path = "./data/word2id.json"
+    label2id_path = "./data/label2id.json"
+
+    x_train_out = "./data/x_train.npy"
+    y_train_out = "./data/y_train.npy"
+    x_test_out = "./data/x_test.npy"
+    y_test_out = "./data/y_test.npy"
+    x_dev_out = "./data/x_dev.npy"
+    y_dev_out = "./data/y_dev.npy"
+
+    make_vocab(train_data, dev_data, test_data, vocab_data)
+
+    x_train, y_train, x_test, y_test, x_dev, y_dev = transfor_cnews(train_data, dev_data, test_data, vocab_data,
+                                                                    word2id_path, label2id_path, 100)
+
+    np.save(x_train_out, x_train)
+    np.save(y_train_out, y_train)
+    np.save(x_test_out, x_test)
+    np.save(y_test_out, y_test)
+    np.save(x_dev_out, x_dev)
+    np.save(y_dev_out, y_dev)
+
+

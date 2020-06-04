@@ -7,10 +7,10 @@ import os
 
 
 # 设置显卡及按需增长
-os.environ['CUDA_VISIBLE_DEVICES']='1'
-gpus = tf.config.experimental.list_physical_devices(device_type='GPU')
-for gpu in gpus:
-    tf.config.experimental.set_memory_growth(gpu, True)
+# os.environ['CUDA_VISIBLE_DEVICES']='0'
+# gpus = tf.config.experimental.list_physical_devices(device_type='GPU')
+# for gpu in gpus:
+#     tf.config.experimental.set_memory_growth(gpu, True)
 
 
 class TextCnn(tf.keras.Model):
@@ -105,9 +105,8 @@ class TextCnnLSTM(tf.keras.Model):
 
 
 class TextCnnGRU(tf.keras.Model):
-    def __int__(self, vocab_size, embed_size, class_num):
+    def __init__(self, vocab_size, embed_size, class_num):
         super(TextCnnGRU, self).__init__()
-        self.embedding_layer = layers.Embedding(vocab_size, embed_size)
         self.embedding_layer = layers.Embedding(vocab_size, embed_size)
         self.conv_layer = layers.Conv1D(filters=32, kernel_size=3, padding='same', activation='relu')
         self.pool_layer = layers.MaxPool1D()
@@ -125,8 +124,52 @@ class TextCnnGRU(tf.keras.Model):
 
 class TextBilstmAttention(tf.keras.Model):
     def __init__(self, vocab_size, embed_size, class_num):
+        super(TextBilstmAttention, self).__init__()
         self.embedding_layer = layers.Embedding(vocab_size, embed_size)
-        self.bilstm_layer = layers.Bidirectional()
+        self.bilstm_layer = layers.Bidirectional(layers.LSTM(units=64, return_sequences=True))
+        self.attention_layer = layers.Attention()
+        self.pool_layer = layers.GlobalAveragePooling1D()
+        self.concat_layer = layers.Concatenate()
+        self.dense_layer = layers.Dense(units=64, activation='relu')
+        self.output_layer = layers.Dense(units=class_num, activation='softmax')
+
+    def call(self, inputs, training=None, mask=None):
+        q = self.embedding_layer(inputs)
+        v = self.embedding_layer(inputs)
+        q = self.bilstm_layer(q)
+        v = self.bilstm_layer(v)
+        q_v = self.attention_layer([q, v])
+        q = self.pool_layer(q)
+        q_v = self.pool_layer(q_v)
+        x = self.concat_layer([q, q_v])
+        x = self.dense_layer(x)
+        y = self.output_layer(x)
+        return y
+
+
+class TextCnnAttention(tf.keras.Model):
+    def __init__(self, vocab_size, embed_size, class_num):
+        super(TextCnnAttention, self).__init__()
+        self.embedding_layer = layers.Embedding(vocab_size, embed_size)
+        self.conv_layer = layers.Conv1D(filters=128, kernel_size=5, padding='same')
+        self.attention_layer = layers.Attention()
+        self.pool_layer = layers.GlobalAveragePooling1D()
+        self.concat_layer = layers.Concatenate()
+        self.dense_layer = layers.Dense(units=64, activation='relu')
+        self.output_layer = layers.Dense(units=class_num, activation='softmax')
+
+    def call(self, inputs, training=None, mask=None):
+        q = self.embedding_layer(inputs)
+        v = self.embedding_layer(inputs)
+        q = self.conv_layer(q)
+        v = self.conv_layer(v)
+        q_v = self.attention_layer([q,v])
+        q = self.pool_layer(q)
+        q_v = self.pool_layer(q_v)
+        x = self.concat_layer([q, q_v])
+        x = self.dense_layer(x)
+        y = self.output_layer(x)
+        return y
 
 
 
