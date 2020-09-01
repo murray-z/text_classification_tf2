@@ -3,6 +3,7 @@
 from model import *
 from data_helper import *
 import matplotlib.pyplot as plt
+import sys
 
 model_dict = {'cnn': TextCnn,
               'mulit_kernel_cnn': TextMultiKernalCnn,
@@ -11,7 +12,14 @@ model_dict = {'cnn': TextCnn,
               'cnn_lstm': TextCnnLSTM,
               'cnn_gru': TextCnnGRU,
               'bilstm_attention': TextBilstmAttention,
-              'cnn_attention': TextCnnAttention}
+              'cnn_attention': TextCnnAttention,
+              'transformer': Transformer}
+
+model_type = 'cnn_attention'
+
+if model_type not in model_dict:
+    print("model_type must in {}".format(list(model_dict.keys())))
+    sys.exit()
 
 max_seq_len=100
 vocab_size=6000
@@ -34,7 +42,10 @@ label2id_path = "./data/label2id.json"
 x_train, y_train, x_test, y_test, x_dev, y_dev = np.load(x_train_out), np.load(y_train_out), np.load(x_test_out),\
     np.load(y_test_out), np.load(x_dev_out), np.load(y_dev_out)
 
-model = model_dict['cnn_attention'](vocab_size=vocab_size, embed_size=embed_size, class_num=class_num)
+if model_type == 'transformer':
+    model = model_dict[model_type](maxlen=max_seq_len, vocab_size=vocab_size, embed_size=embed_size, num_heads=10, ff_dim=32, class_num=class_num)
+else:
+    model = model_dict[model_type](vocab_size=vocab_size, embed_size=embed_size, class_num=class_num)
 
 model.compile(optimizer=tf.keras.optimizers.Adam(lr=0.001),
               loss='sparse_categorical_crossentropy',

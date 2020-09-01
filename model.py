@@ -4,6 +4,7 @@
 import tensorflow as tf
 from tensorflow.keras import layers
 import os
+from transformer_layer import *
 
 
 # 设置显卡及按需增长
@@ -170,6 +171,30 @@ class TextCnnAttention(tf.keras.Model):
         x = self.dense_layer(x)
         y = self.output_layer(x)
         return y
+
+
+class Transformer(tf.keras.Model):
+    def __init__(self, maxlen, vocab_size, embed_size, num_heads, ff_dim, class_num):
+        super(Transformer, self).__init__()
+        self.embedding_layer = TokenAndPositionEmbedding(maxlen=maxlen, vocab_size=vocab_size,
+                                                         embed_dim=embed_size)
+        self.transformer_block = TransformerBlock(embed_size, num_heads, ff_dim)
+        self.pooling = layers.GlobalAveragePooling1D()
+        self.dense1 = layers.Dense(64, activation='rele')
+        self.dense2 = layers.Dense(class_num, activation='softmax')
+        self.dropout1 = layers.Dropout(0.1)
+        self.dropout2 = layers.Dropout(0.1)
+
+    def call(self, inputs, **kwargs):
+        x = self.embedding_layer(inputs)
+        x = self.transformer_block(x)
+        x = self.pooling(x)
+        x = self.dropout1(x)
+        x = self.dense1(x)
+        x = self.dropout2(x)
+        y = self.dense2(x)
+        return y
+
 
 
 
